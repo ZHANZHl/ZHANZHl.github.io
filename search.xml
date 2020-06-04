@@ -8,7 +8,7 @@
       <link href="/2020/06/03/yong-js-shi-yi-ge-biao-dan-tiao-zhuan-dao-bu-tong-ye-mian/"/>
       <url>/2020/06/03/yong-js-shi-yi-ge-biao-dan-tiao-zhuan-dao-bu-tong-ye-mian/</url>
       
-        <content type="html"><![CDATA[<ol><li><p>设置不同的button</p></li><li><p>为每个button设置onclick事件</p></li><li><p>事件内容如下:</p><pre><code class="javascript">function 方法名() {     document.form.action=&quot;要跳转到的url&quot;     document.form.submit()}</code></pre></li></ol>]]></content>
+        <content type="html"><![CDATA[<ol><li><p>设置不同的button</p></li><li><p>为每个button设置onclick事件</p></li><li><p>事件内容如下:</p><pre><code class="javascript">function 方法名() {     document.你的表单名.action=&quot;要跳转到的url&quot;     document.你的表单名.submit()}</code></pre></li></ol>]]></content>
       
       
       
