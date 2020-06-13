@@ -99,25 +99,6 @@
     
     
     <entry>
-      <title>改进m3u8下载</title>
-      <link href="/2020/04/02/gai-jin-m3u8-xia-zai/"/>
-      <url>/2020/04/02/gai-jin-m3u8-xia-zai/</url>
-      
-        <content type="html"><![CDATA[<h2 id="改进m3u8下载"><a href="#改进m3u8下载" class="headerlink" title="改进m3u8下载"></a>改进m3u8下载</h2><blockquote><p>自从用类的方式写了m3u8下载之后,总觉得不太对劲,想改一改</p></blockquote><h3 id="改进"><a href="#改进" class="headerlink" title="改进"></a>改进</h3><p>下载是一个过程</p><p>下载器是个实例</p><p>有空把这坑填了</p>]]></content>
-      
-      
-      
-        <tags>
-            
-            <tag> python,爬虫 </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
       <title>五子棋AI</title>
       <link href="/2020/03/19/wu-zi-qi-ai/"/>
       <url>/2020/03/19/wu-zi-qi-ai/</url>
@@ -141,7 +122,7 @@
       <link href="/2020/03/14/yong-python-pa-qu-m3u8-shi-pin/"/>
       <url>/2020/03/14/yong-python-pa-qu-m3u8-shi-pin/</url>
       
-        <content type="html"><![CDATA[<h4 id="用python爬取m3u8视频"><a href="#用python爬取m3u8视频" class="headerlink" title="用python爬取m3u8视频"></a>用python爬取m3u8视频</h4><h5 id="m3u8格式"><a href="#m3u8格式" class="headerlink" title="m3u8格式"></a>m3u8格式</h5><p>m3u8是纯文本文档,里面包含了每个视频段的链接</p><p>合起来就是一个完整的视频,如下所示</p><pre><code>#EXTM3U#EXT-X-VERSION:3#EXT-X-TARGETDURATION:7#EXT-X-MEDIA-SEQUENCE:0#EXTINF:4.712100,4ddf19cc057000000.ts#EXTINF:4.170000,4ddf19cc057000001.ts#EXTINF:4.170000,4ddf19cc057000002.ts</code></pre><p>应注意到<code>4ddf19cc057000000.ts</code>是第一个视频的链接,但是无法直接打开</p><p>因为这个链接是不完整的,需要在这个链接前加上完整的路径才是完整的链接</p><p>如:</p><p>你找到了一个m3u8文件,他的链接是<a href="http://localhost/path/m3u8/index.m3u8" target="_blank" rel="noopener">http://localhost/path/m3u8/index.m3u8</a></p><p>里面第一段视频链接是1.ts</p><p>那么这段视频的完整地址是<a href="http://localhost/path/m3u8/1.ts" target="_blank" rel="noopener">http://localhost/path/m3u8/1.ts</a></p><h5 id="类的设计"><a href="#类的设计" class="headerlink" title="类的设计"></a>类的设计</h5><p>接受参数:</p><ul><li>文件名</li><li>代理设置</li><li>m3u8链接</li><li>本地路径</li><li>线程个数</li></ul><p>函数设定:</p><ul><li><p>down(ts文件链接)</p><blockquote><p>下载单个ts文件</p></blockquote></li><li><p>parse</p><blockquote><p>读取m3u8文件获取每个ts文件的链接,如果不是完整的链接则补全</p></blockquote></li></ul><h5 id="m3u8downloader"><a href="#m3u8downloader" class="headerlink" title="m3u8downloader"></a>m3u8downloader</h5><pre><code class="python">import requestsimport osfrom concurrent.futures import ThreadPoolExecutor, ALL_COMPLETEDclass m3u8_downloader(object):    def __init__(self, m3u8_url, filename, max_worker=32, proxy=&quot;&quot;, path=os.path.dirname(__file__)):        self.m3u8_url = m3u8_url        self.filename = filename        self.max_worker = max_worker        self.proxy = proxy        self.path = path + os.path.sep;        self.parse()        pass;    def download_file(self, url, filename):        print(filename)        r = requests.get(url, proxies=self.proxy)        while r.status_code != 200:            r = requests.get(url, proxies=self.proxy)        with open(filename, &quot;wb+&quot;) as f:            f.write(r.content)    def parse(self):        pool = ThreadPoolExecutor(self.max_worker)        r = requests.get(self.m3u8_url, timeout=5)        base_url = os.path.dirname(self.m3u8_url)        temp = self.path + &quot;temp&quot; + os.path.sep        if not os.path.exists(temp):            os.makedirs(temp)        i = 0        for line in r.text.split(&#39;\n&#39;):            if line.find(&quot;.ts&quot;) != -1:                if not line.startswith(&quot;http&quot;):                    line = base_url + &#39;/&#39; + line                pool.submit(self.download_file, line, temp + str(i).zfill(8) + &quot;.ts&quot;)                i = i + 1        pool.shutdown(wait=True)        print(self.path)        os.system(&quot;copy /b {}*.ts {}&quot;.format(temp, self.path + self.filename))        os.system(&quot;rmdir /s/q {}&quot;.format(temp))</code></pre>]]></content>
+        <content type="html"><![CDATA[<h4 id="用python爬取m3u8视频"><a href="#用python爬取m3u8视频" class="headerlink" title="用python爬取m3u8视频"></a>用python爬取m3u8视频</h4><h4 id="m3u8格式"><a href="#m3u8格式" class="headerlink" title="m3u8格式"></a>m3u8格式</h4><p>m3u8是纯文本文档,里面包含了每个视频段的链接</p><p>合起来就是一个完整的视频,如下所示</p><pre><code>#EXTM3U#EXT-X-VERSION:3#EXT-X-TARGETDURATION:7#EXT-X-MEDIA-SEQUENCE:0#EXTINF:4.712100,4ddf19cc057000000.ts#EXTINF:4.170000,4ddf19cc057000001.ts#EXTINF:4.170000,4ddf19cc057000002.ts</code></pre><p>应注意到<code>4ddf19cc057000000.ts</code>是第一个视频的链接,但是无法直接打开</p><p>因为这个链接是不完整的,需要在这个链接前加上完整的路径才是完整的链接</p><p>如:</p><p>你找到了一个m3u8文件,他的链接是<a href="http://localhost/path/m3u8/index.m3u8" target="_blank" rel="noopener">http://localhost/path/m3u8/index.m3u8</a></p><p>里面第一段视频链接是1.ts</p><p>那么这段视频的完整地址是<a href="http://localhost/path/m3u8/1.ts" target="_blank" rel="noopener">http://localhost/path/m3u8/1.ts</a></p><h4 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h4><pre><code>import requestsimport osfrom concurrent.futures import ThreadPoolExecutor, ALL_COMPLETEDm3u8_url = &#39;m3u8的链接&#39;  # m3u8的链接filename = &#39;22&#39;  # 下载后保存的名字max_worker = 8  # 线程数proxy = {&#39;http&#39;: &#39;http://127.0.0.1:1080&#39;, &#39;https&#39;: &#39;http://127.0.0.1:1080&#39;}  # 代理设置path = &quot;下载到哪个路径&quot;  # 下载到哪个路径def download_file(url, filename):    r = requests.get(url, proxies=proxy)    while r.status_code != 200:        r = requests.get(url, proxies=proxy)        print(filename,&#39;请求超时&#39;)    with open(filename, &quot;wb+&quot;) as f:        f.write(r.content)def parse():    pool = ThreadPoolExecutor(max_worker)    r = requests.get(m3u8_url, timeout=5, proxies=proxy)    base_url = os.path.dirname(m3u8_url)    temp = path + &quot;temp&quot; + os.path.sep    if not os.path.exists(temp):        os.makedirs(temp)    i = 0    for line in r.text.split(&#39;\n&#39;):        if line.find(&quot;.ts&quot;) != -1:            if not line.startswith(&quot;http&quot;):                line = base_url + &#39;/&#39; + line            pool.submit(download_file, line, temp + str(i).zfill(8) + &quot;.ts&quot;)            i = i + 1    pool.shutdown(wait=True)    os.system(&quot;cd {} &amp;&amp; copy /b *.ts ..\\{}&quot;.format(path + &quot;temp//&quot;,filename))    os.system(&quot;cd {} &amp;&amp;rmdir /s/q .\\temp&quot;.format(path))if __name__ == &#39;__main__&#39;:    parse()</code></pre>]]></content>
       
       
       
