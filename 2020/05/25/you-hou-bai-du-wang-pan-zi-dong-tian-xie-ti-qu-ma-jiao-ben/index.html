@@ -1,46 +1,52 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享"><meta name="keywords" content="备忘录"><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/css/style.css?v=2.0.4"><link rel="stylesheet" type="text/css" href="/css/highlight.css?v=2.0.4"><link rel="Shortcut Icon" href="/favicon.ico"><link rel="bookmark" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><link rel="stylesheet" type="text/css" href="https://unpkg.com/gitalk/dist/gitalk.css?v=2.0.4"><title>油猴百度网盘自动填写提取码脚本 | 好像什么都会一点,却都只会这一点</title><meta name="generator" content="Hexo 4.2.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">油猴百度网盘自动填写提取码脚本</h1><a id="logo" href="/.">好像什么都会一点,却都只会这一点</a><p class="description">zhanzhi的备忘录</p></div><div id="nav-menu"><a href="/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/about/"><i class="fa fa-user"> 关于</i></a><a href="/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">油猴百度网盘自动填写提取码脚本</h1><div class="post-meta"><a href="/2020/05/25/you-hou-bai-du-wang-pan-zi-dong-tian-xie-ti-qu-ma-jiao-ben/#comments" class="comment-count"></a><p><span class="date">May 25, 2020</span><span><i id="busuanzi_container_page_pv"><i id="busuanzi_value_page_pv"></i><i>点击</i></i></span></p></div><div class="post-content"><pre><code class="javascript">// ==UserScript==
 // @name         百度网盘自动填写提取码
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  try to take over the world!
 // @author       zhanzhi
 // @match        https://pan.baidu.com/*
 // @grant        none
 // ==/UserScript==
 
+
 (function() {
     &#39;use strict&#39;;
 var body=document.getElementsByTagName(&#39;body&#39;)[0]
-var reg=/https?:\/\/pan.baidu.com\/s\/.{23}.*?提取码.*?([0-9a-zA-Z]{4})/igm
-var link_reg=/^https?:\/\/pan.baidu.com\/s\/.{23}/
+var reg=/https?:\/\/pan.baidu.com\/s\/.{23}.*?提取码.*?([0-9a-zA-Z]{4})/s
+var link_reg=/^https?:\/\/pan.baidu.com\/s\/.(.{22})/
 var key_reg=/[0-9a-zA-Z]{4}$/
 var links_and_keys=body.innerHTML.match(reg)
 var links=[]
 var keys=[]
-if(location.href.match(/^https?:\/\/pan.baidu.com/)!=null)
+if(location.href.match(/^https?:\/\/pan.baidu.com/)!==null)
 {
     var key=location.href.split(&#39;#&#39;)[1]
-    console.log(key);
     var key_input=document.getElementsByTagName(&#39;input&#39;)[0]
-    key_input.value=key
-    var but=document.getElementsByClassName(&quot;g-button g-button-blue-large&quot;)[0]
-    but.click()
+    if(typeof key ===&quot;string&quot;)
+    {
+        key_input.value=key
+        var but=document.getElementsByClassName(&quot;g-button g-button-blue-large&quot;)[0]
+        but.click()
+    }
+
 }
 else
 {
     var vm=body.innerHTML
-    for(let link_and_key of links_and_keys)
-    {
-        links.push(link_and_key.match(link_reg)[0])
-        keys.push(link_and_key.match(key_reg)[0])
-        vm=vm.replace(link_and_key.match(link_reg)[0],link_and_key.match(link_reg)[0]+&#39;#&#39;+link_and_key.match(key_reg)[0])
-    }
+    links.push(links_and_keys[0].match(link_reg)[0])
+    keys.push(links_and_keys[1].match(key_reg)[0])
+    var surl=links_and_keys[0].match(link_reg)[1]
+    var url=&#39;https://pan.baidu.com/share/init?surl=&#39;+surl
+    vm=vm.replace(links_and_keys[0].match(link_reg)[0],url+&#39;#&#39;+links_and_keys[0].match(key_reg)[0])
     body.innerHTML=vm
 }
 
 })();</code></pre>
 <blockquote>
-<p>现在百度盘的分享都会重定向,所以将提取码保存在链接中失效了</p>
+<p>经观察,虽然百度盘的分享链接会重定向</p>
+<p>不过重定向的url都是有规律的</p>
+<p>如分享链接为<a href="https://pan.baidu.com/s/1.{22}" target="_blank" rel="noopener">https://pan.baidu.com/s/1.{22}</a></p>
+<p>那么填写提取码的链接就是<a href="https://pan.baidu.com/share/init?surl=加上上面.{22}匹配到的内容" target="_blank" rel="noopener">https://pan.baidu.com/share/init?surl=加上上面.{22}匹配到的内容</a></p>
 </blockquote>
 </div><div class="post-copyright"><blockquote><p>原文作者: zhanzhi</p><p>原文链接: <a href="http://zhanzhl.github.io/2020/05/25/you-hou-bai-du-wang-pan-zi-dong-tian-xie-ti-qu-ma-jiao-ben/">http://zhanzhl.github.io/2020/05/25/you-hou-bai-du-wang-pan-zi-dong-tian-xie-ti-qu-ma-jiao-ben/</a></p><p>版权声明: 随意</p></blockquote></div><div class="tags"><a href="/tags/js-%E6%B2%B9%E7%8C%B4%E8%84%9A%E6%9C%AC/">js,油猴脚本</a></div><div class="post-share"><div class="social-share"><span>分享到:</span></div></div><div class="post-nav"><a href="/2020/05/25/python-duo-xian-cheng/" class="pre">python多线程</a><a href="/2020/05/24/zhi-neng-ji-suan/" class="next">手撕bp神经网络</a></div><div id="comments"><div id="container"><script type="text/javascript" src="https://unpkg.com/gitalk/dist/gitalk.min.js?v=2.0.4"></script><script type="text/javascript" src="//cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js?v=2.0.4"></script><script>var gitalk = new Gitalk({
   clientID: '207ff0f000142891e1df',
