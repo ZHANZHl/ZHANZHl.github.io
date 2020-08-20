@@ -4,6 +4,25 @@
   
     
     <entry>
+      <title>记一次pdf去水印的流程</title>
+      <link href="/2020/08/20/pdf-qu-shui-yin/"/>
+      <url>/2020/08/20/pdf-qu-shui-yin/</url>
+      
+        <content type="html"><![CDATA[<blockquote><p>在网上找到了一份学习资料,但是上面的水印十分影响阅读,我想把水印去掉</p></blockquote><ol><li><p>首先想到的就是python有没有什么库可以操作pdf</p><blockquote><p>经过搜索发现有人用pypdf2去水印,并且贴上了代码:<a href="https://www.jianshu.com/p/f449a6e86602" target="_blank" rel="noopener">链接</a></p><p>试着运行了下这份代码,没有解决我的问题</p></blockquote></li><li><p>在查看了pypdf2官方文档,debug无果之后,尝试打印了第一页所有的格式,发现只有如下几种:</p><blockquote><p>[b’q’, b’BT’, b’Tf’, b’Tc’, b’Tm’, b’g’, b’G’, b’TJ’, b’ET’, b’Q’, b’Tr’, b’w’, b’cm’, b’re’, b’f*’, b’BDC’, b’gs’, b’Do’, b’EMC’]</p></blockquote></li><li><p>尝试依次去除一种格式,观察效果:</p><blockquote><pre><code>Tm 格式全去掉为空Tf 格式去掉为乱码g 格式全去掉出现小黑快cm 格式去掉水印出现倾斜gs 格式去掉水印变黑了Do 格式去掉水印消失了</code></pre></blockquote></li><li><p>所以说,只要把每一页的Do格式的文本替换为空,就可以达到去水印的目的</p></li><li><p>但是我觉着到目前为止的东西都太体力了,我想要一种快捷的做法</p></li><li><p>又去网上找到了一篇介绍pdf文件格式的文章, <a href="https://lazymind.me/2017/10/pdf-structure/" target="_blank" rel="noopener">链接</a></p></li><li><p>在程序中打印了格式为Do的数据,输出如下</p><blockquote><p>[‘/KSPX1’]</p></blockquote></li><li><p>用文本编辑器打开pdf文件并搜索,得到这样的内容</p><p><img src="img.jpg" alt=""></p></li><li><p>将<code>&lt;&lt;/KSPX1 5548 0 R &gt;&gt;</code>删除可以删除一页的水印</p></li><li><p>而由前面的文章可以知道,这个是一个间接引用,将关键字改为5548 0 obj可以搜索到</p><p><img src="img2.jpg" alt=""></p></li><li><p>将这一段删掉即可去除整个pdf的水印</p></li></ol><h4 id="ps"><a href="#ps" class="headerlink" title="ps"></a>ps</h4><ol><li>如果一页的水印只有一个的话,可以尝试计算出对应格式出现的次数,优先删除出现次数为1的格式</li><li>到现在也不明白所谓的格式是什么</li></ol>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> pdf,小工具 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>用js使一个表单跳转到不同页面</title>
       <link href="/2020/06/03/yong-js-shi-yi-ge-biao-dan-tiao-zhuan-dao-bu-tong-ye-mian/"/>
       <url>/2020/06/03/yong-js-shi-yi-ge-biao-dan-tiao-zhuan-dao-bu-tong-ye-mian/</url>
