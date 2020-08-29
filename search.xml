@@ -4,11 +4,49 @@
   
     
     <entry>
+      <title>深入理解计算机系统</title>
+      <link href="/2020/08/29/shen-ru-li-jie-ji-suan-ji-xi-tong/"/>
+      <url>/2020/08/29/shen-ru-li-jie-ji-suan-ji-xi-tong/</url>
+      
+        <content type="html"><![CDATA[<h2 id="深入理解计算机系统"><a href="#深入理解计算机系统" class="headerlink" title="深入理解计算机系统"></a>深入理解计算机系统</h2><blockquote><p>前几天发现自己不知道浮点数是怎么表示的了,于是看一看这本书</p></blockquote><h3 id="数据类型"><a href="#数据类型" class="headerlink" title="数据类型"></a>数据类型</h3><ul><li><p>整数</p><ul><li>原码:首位符号位,其余正常的二进制</li><li>反码:首位为负值,并且需要+1,其余为正常值</li><li>补码:首位为负值,其余位为正常值</li></ul></li><li><p>浮点数</p><p>首位符号位,阶码,尾数</p><p>例: 0 0000 0001</p><p>首位为0 ,正数</p><p>阶码位置字面表示为0 E=1-(2^(4-1)-1)=-6 权重为2^(-6)=1/64</p><p>尾数为1/16</p><p>结果为 1/64*1/16</p><p>0 0001 0001</p><p>首位为0 ,正数</p><p>阶码位置字面表示为1 E=1-(2^(4-1)-1)=7 权重为2^(-6)=1/64</p><p>尾数为17/16</p><p>结果为 1/64*17/16</p></li></ul><h4 id="运算"><a href="#运算" class="headerlink" title="运算"></a>运算</h4><p>溢出都会保留低位作为新值</p><p>强制转换不改变位,只改变解释位的方法 </p>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> 计算机系统,读书笔记 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>马拉车算法</title>
+      <link href="/2020/08/29/ma-la-che-suan-fa/"/>
+      <url>/2020/08/29/ma-la-che-suan-fa/</url>
+      
+        <content type="html"><![CDATA[<h2 id="马拉车算法"><a href="#马拉车算法" class="headerlink" title="马拉车算法"></a>马拉车算法</h2><blockquote><p>刷leetcode时,遇到了<a href="https://leetcode-cn.com/problems/shortest-palindrome/" target="_blank" rel="noopener">这道题</a></p></blockquote><p>粗一分析,发现本质上是在找这个字符串的最长回文前缀,将非前缀的转置加到前面就是结果了</p><h3 id="超时代码"><a href="#超时代码" class="headerlink" title="超时代码"></a>超时代码</h3><pre><code class="python">class Solution:    def checkP(self, s: str):        for i in range(int(len(s) / 2)):            if s[i] != s[len(s) - 1 - i]:                return False        return True    def shortestPalindrome(self, s: str) -&gt; str:        if self.checkP(s):            return s        # t = &#39;&#39;        # for i in range(len(s))[::-1]:        #     t = t + s[i]        #     p = t + s        #     if self.checkP(p):        #         return p        n=len(s)        max_num=0        for i in range(2,n):            if self.checkP(s[:i]):                max_num=max(max_num,i)        if max_num==0:            return s[1:][::-1]+s        return s[max_num:][::-1]+s</code></pre><p>每个中心遍历一遍,重复判断回文</p><p>时间复杂度O(n)</p><h3 id="马拉车"><a href="#马拉车" class="headerlink" title="马拉车"></a>马拉车</h3><pre><code class="python">class Solution:    def checkP(self, s: str):        for i in range(int(len(s) / 2)):            if s[i] != s[len(s) - 1 - i]:                return False        return True    def shortestPalindrome(self, s: str) -&gt; str:        def manacher(s1: str):            s1 = &quot;#&quot; + &quot;#&quot;.join(s1) + &quot;#&quot;            n = len(s1)            p = [0] * n            center, max_right = 0, 0            for i in range(n):                length = 0                if i &lt; max_right:                    length = min(p[center * 2 - i], max_right - i)                while i - length &gt;= 0 and i + length &lt; n and s1[i + length] == s1[i - length]:                    if length + i &gt; max_right:                        max_right = length + i                        center = i                    length += 1                p[i] = length - 1            return p        if self.checkP(s):            return s        n = len(s)        p = manacher(s)        max_num = 0        for i in range(len(p)):            if i - p[i] == 0:                max_num = max(max_num, (i + p[i])//2)        if max_num == 0:            return s[1:][::-1] + s        return s[max_num:][::-1] + s</code></pre><p>参考了<a href="https://www.cxyxiaowu.com/2665.html" target="_blank" rel="noopener">这篇文章</a></p>]]></content>
+      
+      
+      
+        <tags>
+            
+            <tag> 算法,回文字符串 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>记一次pdf去水印的流程</title>
       <link href="/2020/08/20/pdf-qu-shui-yin/"/>
       <url>/2020/08/20/pdf-qu-shui-yin/</url>
       
-        <content type="html"><![CDATA[<blockquote><p>在网上找到了一份学习资料,但是上面的水印十分影响阅读,我想把水印去掉</p></blockquote><ol><li><p>首先想到的就是python有没有什么库可以操作pdf</p><blockquote><p>经过搜索发现有人用pypdf2去水印,并且贴上了代码:<a href="https://www.jianshu.com/p/f449a6e86602" target="_blank" rel="noopener">链接</a></p><p>试着运行了下这份代码,没有解决我的问题</p></blockquote></li><li><p>在查看了pypdf2官方文档,debug无果之后,尝试打印了第一页所有的格式,发现只有如下几种:</p><blockquote><p>[b’q’, b’BT’, b’Tf’, b’Tc’, b’Tm’, b’g’, b’G’, b’TJ’, b’ET’, b’Q’, b’Tr’, b’w’, b’cm’, b’re’, b’f*’, b’BDC’, b’gs’, b’Do’, b’EMC’]</p></blockquote></li><li><p>尝试依次去除一种格式,观察效果:</p><blockquote><pre><code>Tm 格式全去掉为空Tf 格式去掉为乱码g 格式全去掉出现小黑快cm 格式去掉水印出现倾斜gs 格式去掉水印变黑了Do 格式去掉水印消失了</code></pre></blockquote></li><li><p>所以说,只要把每一页的Do格式的文本替换为空,就可以达到去水印的目的</p></li><li><p>但是我觉着到目前为止的东西都太体力了,我想要一种快捷的做法</p></li><li><p>又去网上找到了一篇介绍pdf文件格式的文章, <a href="https://lazymind.me/2017/10/pdf-structure/" target="_blank" rel="noopener">链接</a></p></li><li><p>在程序中打印了格式为Do的数据,输出如下</p><blockquote><p>[‘/KSPX1’]</p></blockquote></li><li><p>用文本编辑器打开pdf文件并搜索,得到这样的内容</p><p><img src="img.jpg" alt=""></p></li><li><p>将<code>&lt;&lt;/KSPX1 5548 0 R &gt;&gt;</code>删除可以删除一页的水印</p></li><li><p>而由前面的文章可以知道,这个是一个间接引用,将关键字改为5548 0 obj可以搜索到</p><p><img src="img2.jpg" alt=""></p></li><li><p>将这一段删掉即可去除整个pdf的水印</p></li></ol><h4 id="ps"><a href="#ps" class="headerlink" title="ps"></a>ps</h4><ol><li>如果一页的水印只有一个的话,可以尝试计算出对应格式出现的次数,优先删除出现次数为1的格式</li><li>到现在也不明白所谓的格式是什么</li></ol>]]></content>
+        <content type="html"><![CDATA[<blockquote><p>在网上找到了一份学习资料,但是上面的水印十分影响阅读,我想把水印去掉</p></blockquote><ol><li><p>首先想到的就是python有没有什么库可以操作pdf</p><blockquote><p>经过搜索发现有人用pypdf2去水印,并且贴上了代码:<a href="https://www.jianshu.com/p/f449a6e86602" target="_blank" rel="noopener">链接</a></p><p>试着运行了下这份代码,没有解决我的问题</p></blockquote></li><li><p>在查看了pypdf2官方文档,debug无果之后,尝试打印了第一页所有的格式,发现只有如下几种:</p><blockquote><p>[b’q’, b’BT’, b’Tf’, b’Tc’, b’Tm’, b’g’, b’G’, b’TJ’, b’ET’, b’Q’, b’Tr’, b’w’, b’cm’, b’re’, b’f*’, b’BDC’, b’gs’, b’Do’, b’EMC’]</p></blockquote></li><li><p>尝试依次去除一种格式,观察效果:</p><blockquote><pre><code>Tm 格式全去掉为空Tf 格式去掉为乱码g 格式全去掉出现小黑快cm 格式去掉水印出现倾斜gs 格式去掉水印变黑了Do 格式去掉水印消失了</code></pre></blockquote></li><li><p>所以说,只要把每一页的Do格式的文本替换为空,就可以达到去水印的目的</p></li><li><p>但是我觉着到目前为止的东西都太体力了,我想要一种快捷的做法</p></li><li><p>又去网上找到了一篇介绍pdf文件格式的文章, <a href="https://lazymind.me/2017/10/pdf-structure/" target="_blank" rel="noopener">链接</a></p></li><li><p>在程序中打印了格式为Do的数据,输出如下</p><blockquote><p>[‘/KSPX1’]</p></blockquote></li><li><p>用文本编辑器打开pdf文件并搜索,得到这样的内容</p><p><img src="img.jpg" alt=""></p></li><li><p>将<code>&lt;&lt;/KSPX1 5548 0 R &gt;&gt;</code>删除可以删除一页的水印</p></li><li><p>而由前面的文章可以知道,这个是一个间接引用,将关键字改为5548 0 obj可以搜索到</p><p><img src="img2.jpg" alt=""></p></li><li><p>将这一段删掉即可去除整个pdf的水印</p></li></ol><h4 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h4><ol><li>如果一页的水印只有一个的话,可以尝试计算出对应格式出现的次数,优先删除出现次数为1的格式</li><li>到现在也不明白所谓的格式是什么</li></ol>]]></content>
       
       
       
