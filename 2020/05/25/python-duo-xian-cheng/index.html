@@ -1,48 +1,134 @@
 <!DOCTYPE html><html lang="zh-CN"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="分享"><meta name="keywords" content="备忘录"><link rel="stylesheet" type="text/css" href="//fonts.loli.net/css?family=Source+Code+Pro"><link rel="stylesheet" type="text/css" href="/ZHANZHl.github.io/css/style.css?v=2.0.4"><link rel="stylesheet" type="text/css" href="/ZHANZHl.github.io/css/highlight.css?v=2.0.4"><link rel="Shortcut Icon" href="/ZHANZHl.github.io/favicon.ico"><link rel="bookmark" href="/ZHANZHl.github.io/favicon.ico"><link rel="apple-touch-icon" href="/ZHANZHl.github.io/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/ZHANZHl.github.io/apple-touch-icon.png"><link rel="stylesheet" type="text/css" href="https://unpkg.com/gitalk/dist/gitalk.css?v=2.0.4"><title>python多线程 | 好像什么都会一点,却都只会这一点</title><meta name="generator" content="Hexo 4.2.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">python多线程</h1><a id="logo" href="/ZHANZHl.github.io/.">好像什么都会一点,却都只会这一点</a><p class="description">zhanzhi的备忘录</p></div><div id="nav-menu"><a href="/ZHANZHl.github.io/." class="current"><i class="fa fa-home"> 首页</i></a><a href="/ZHANZHl.github.io/archives/"><i class="fa fa-archive"> 归档</i></a><a href="/ZHANZHl.github.io/about/"><i class="fa fa-user"> 关于</i></a><a href="/ZHANZHl.github.io/atom.xml"><i class="fa fa-rss"> 订阅</i></a></div><div id="search-form"><div id="result-mask" class="hide"></div><label><input id="search-key" type="text" autocomplete="off" placeholder="搜索"></label><div id="result-wrap" class="hide"><div id="search-result"></div></div><div class="hide"><template id="search-tpl"><div class="item"><a href="/{path}" title="{title}"><div class="title">{title}</div><div class="time">{date}</div><div class="tags">{tags}</div></a></div></template></div></div></div><div id="layout" class="layout-g"><div class="layout-l"><div class="content_container"><div class="post"><h1 class="post-title">python多线程</h1><div class="post-meta"><a href="/ZHANZHl.github.io/2020/05/25/python-duo-xian-cheng/#comments" class="comment-count"></a><p><span class="date">May 25, 2020</span><span><i id="busuanzi_container_page_pv"><i id="busuanzi_value_page_pv"></i><i>点击</i></i></span></p></div><div class="post-content"><blockquote>
-<p>每次用到python多线程,都是看了就忘</p>
+<p>现在从头开始梳理python,学习一下多线程编程</p>
 </blockquote>
-<h3 id="threading"><a href="#threading" class="headerlink" title="threading"></a>threading</h3><p>用法:<code>threading.Thread(target=函数名)</code>创建线程,<code>start</code>开始执行,<code>join</code>等待完成</p>
-<p>示例:</p>
-<pre><code class="python">import threading
+<p>首先看一下官网的介绍</p>
+<blockquote>
+<p>该模块的设计基于 Java的线程模型。 但是，在Java里面，锁和条件变量是每个对象的基础特性，而在Python里面，这些被独立成了单独的对象。 Python 的 <code>Thread</code> 类只是 Java 的 <code>Thread</code> 类的一个子集；目前还没有优先级，没有线程组，线程还不能被销毁、停止、暂停、恢复或中断。 Java 的 Thread 类的静态方法在实现时会映射为模块级函数。</p>
+</blockquote>
+<h3 id="从信号量开始"><a href="#从信号量开始" class="headerlink" title="从信号量开始"></a>从信号量开始</h3><pre><code class="python">def __init__(self, value=1):
+    if value &lt; 0:
+        raise ValueError(&quot;semaphore initial value must be &gt;= 0&quot;) #判断了下value
+    self._cond = Condition(Lock()) #初始化了Condition
+    self._value = value</code></pre>
+<h4 id="acquire"><a href="#acquire" class="headerlink" title="acquire"></a>acquire</h4><pre><code class="python">if not blocking and timeout is not None:
+    raise ValueError(&quot;can&#39;t specify timeout for non-blocking acquire&quot;) # 如果设置了非阻塞的话,就不应该有超时时间
+rc = False # 结果
+endtime = None 
+with self._cond: #应当是通过上下文管理器申请了锁,具体等会看(__enter__)
+    while self._value == 0: # 如果资源不足
+        if not blocking: # 非阻塞的话,不管怎么样直接返回
+            break
+        if timeout is not None: # 如果设置了超时时间
+            if endtime is None:
+                endtime = _time() + timeout # _time 实际上是time.monotonic 用这个函数判断时间间隔,确定这个函数等到什么时候就不再等了
+            else:
+                timeout = endtime - _time() # 这里的timeout 是计算了下还要等多久
+                if timeout &lt;= 0: # 如果已经超时了当然要退出
+                    break
+        self._cond.wait(timeout) # 可能是等待唤醒吧
+    else: # 没什么好写的,就是正常的申请资源吧
+        self._value -= 1 
+        rc = True
+return rc</code></pre>
+<p>同时还设置了下 上下文管理器<code>__enter__ = acquire</code></p>
+<h4 id="release"><a href="#release" class="headerlink" title="release"></a>release</h4><pre><code class="python">with self._cond: # 这好像主要是Condition
+    self._value += 1
+    self._cond.notify()</code></pre>
+<p>同<code>acquire</code>一样,设置了退出上下文管理器的代码</p>
+<pre><code class="python">def __exit__(self, t, v, tb):
+    self.release()</code></pre>
+<h3 id="Condition"><a href="#Condition" class="headerlink" title="Condition"></a>Condition</h3><pre><code class="python">def __init__(self, lock=None): # 多有意思,信号量用了condition ,condition用了lock 等会看lock吧
+    if lock is None:
+        lock = RLock() # 默认是RLock
+    self._lock = lock
+    self.acquire = lock.acquire
+    self.release = lock.release
+    # 鬼知道接下来这几个函数是什么意思,不过代码的意思是 如果lock实现了这些方法,那么这个condition的这些方法应当被覆盖掉
+    try:
+        self._release_save = lock._release_save
+    except AttributeError:
+        pass
+    try:
+        self._acquire_restore = lock._acquire_restore
+    except AttributeError:
+        pass
+    try:
+        self._is_owned = lock._is_owned
+    except AttributeError:
+        pass
+    self._waiters = _deque() # 来了,等待队列</code></pre>
+<h4 id="condition的上下文管理器完全是lock的"><a href="#condition的上下文管理器完全是lock的" class="headerlink" title="condition的上下文管理器完全是lock的"></a>condition的上下文管理器完全是lock的</h4><pre><code class="python">def __enter__(self):
+    return self._lock.__enter__()
 
-reader_count = 0
-write_count = 0
-reader_amount = 0
-write_amount = 0
-
-
-def reader():
-    global reader_count, write_count, reader_amount, write_amount
-    while reader_amount &gt; 0:
-        if reader_count &gt; 0 or write_count == 0:
-            reader_count += 1
-            print(&#39;read&#39;)
-            reader_amount -= 1
-            reader_count -= 1
+def __exit__(self, *args):
+    return self._lock.__exit__(*args)</code></pre>
+<h4 id="is-owned"><a href="#is-owned" class="headerlink" title="_is_owned"></a>_is_owned</h4><pre><code class="python">def _is_owned(self): # 不知道什么意思
+    if self._lock.acquire(0):
+        self._lock.release()
+        return False
+    else:
+        return True</code></pre>
+<h4 id="wait"><a href="#wait" class="headerlink" title="wait"></a>wait</h4><pre><code class="python">if not self._is_owned():
+    raise RuntimeError(&quot;cannot wait on un-acquired lock&quot;)
+waiter = _allocate_lock() # _thread.allocate_lock 我觉着这个方法可以去看文档   https://docs.python.org/zh-cn/3/library/_thread.html
+waiter.acquire() 
+self._waiters.append(waiter) # 将新创建的锁添加到双端队列中
+saved_state = self._release_save() # 默认的实现并未返回任何内容
+gotit = False
+try:
+    if timeout is None: # timeout 是函数的参数
+        waiter.acquire() # 实际上如果没有release 会在这里一直卡住 这个代码等同于 waiter.acquire(1,-1)
+        gotit = True # 如果能够到这里说明一定成功获取到了
+    else:
+        if timeout &gt; 0: # 如果time小于等于0 则无限等待
+            gotit = waiter.acquire(True, timeout) # condition的wait实际上是执行了这个代码
         else:
-            print(&quot;can&#39;t read&quot;)
-
-
-def writer():
-    global reader_count, write_count, reader_amount, write_amount
-    while write_amount &gt; 0:
-        if reader_count &gt; 0 or write_count &gt; 0:
-            print(&quot;can&#39;t write&quot;)
-        else:
-            write_count += 1
-            print(&#39;write&#39;)
-            write_amount -= 1
-            write_count -= 1
-
-
-if __name__ == &#39;__main__&#39;:
-
-    reader_amount = int(input(&#39;读次数:&#39;))
-    write_amount = int(input(&#39;写次数:&#39;))
-    read = threading.Thread(target=reader)
-    write = threading.Thread(target=writer)
-    write.start()
-    read.start()</code></pre>
+            gotit = waiter.acquire(False)
+    return gotit
+finally: # 看不懂
+    self._acquire_restore(saved_state)
+    if not gotit:
+        try:
+            self._waiters.remove(waiter)
+        except ValueError:
+            pass</code></pre>
+<h4 id="notify"><a href="#notify" class="headerlink" title="notify"></a>notify</h4><pre><code class="python">if not self._is_owned(): # 怎么上来都这一套啊
+    raise RuntimeError(&quot;cannot notify on un-acquired lock&quot;)
+all_waiters = self._waiters
+waiters_to_notify = _deque(_islice(all_waiters, n)) # 含有n个单位的_deque,n是这个函数的参数
+if not waiters_to_notify:
+    return
+for waiter in waiters_to_notify:
+    waiter.release()
+    try:
+        all_waiters.remove(waiter)
+    except ValueError: # 这个是处理之后all_waiters发生了变化,没有了waiter这个值
+        pass</code></pre>
+<h3 id="Lock"><a href="#Lock" class="headerlink" title="Lock"></a>Lock</h3><p>以之前出现过的RLock为例</p>
+<pre><code class="python"># 大概意思是 如果有c实现的RLock 就用c的 没有就用python的
+if _CRLock is None:
+    return _PyRLock(*args, **kwargs)
+return _CRLock(*args, **kwargs)</code></pre>
+<p>用python实现的RLock是这样的</p>
+<h4 id="init"><a href="#init" class="headerlink" title="init"></a>init</h4><pre><code class="python">def __init__(self):
+    self._block = _allocate_lock() # 见识过了,官网也有介绍
+    self._owner = None
+    self._count = 0</code></pre>
+<h4 id="acquire-1"><a href="#acquire-1" class="headerlink" title="acquire"></a>acquire</h4><pre><code class="python">me = get_ident() # 返回线程id
+if self._owner == me: # 如果线程id和保存的一致
+    self._count += 1
+    return 1
+rc = self._block.acquire(blocking, timeout) # blocking timeout 都是参数
+if rc: # 这么看来,如果线程id不一致,状态也会化为初始值
+    self._owner = me
+    self._count = 1
+return rc</code></pre>
+<h4 id="release-1"><a href="#release-1" class="headerlink" title="release"></a>release</h4><pre><code class="python">if self._owner != get_ident():
+    raise RuntimeError(&quot;cannot release un-acquired lock&quot;)
+self._count = count = self._count - 1 # 重入次数减一
+if not count:
+    self._owner = None
+    self._block.release()</code></pre>
 </div><div class="post-copyright"><blockquote><p>原文作者: zhanzhi</p><p>原文链接: <a href="http://zhanzhl.github.io/2020/05/25/python-duo-xian-cheng/">http://zhanzhl.github.io/2020/05/25/python-duo-xian-cheng/</a></p><p>版权声明: 随意</p></blockquote></div><div class="tags"><a href="/ZHANZHl.github.io/tags/python-%E5%A4%9A%E7%BA%BF%E7%A8%8B/">python,多线程</a></div><div class="post-share"><div class="social-share"><span>分享到:</span></div></div><div class="post-nav"><a href="/ZHANZHl.github.io/2020/06/03/docker-jing-xiang-jia-su-pei-zhi/" class="pre">docker镜像加速配置</a><a href="/ZHANZHl.github.io/2020/05/24/zhi-neng-ji-suan/" class="next">手撕bp神经网络</a></div><div id="comments"><div id="container"><script type="text/javascript" src="https://unpkg.com/gitalk/dist/gitalk.min.js?v=2.0.4"></script><script type="text/javascript" src="//cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.js?v=2.0.4"></script><script>var gitalk = new Gitalk({
   clientID: '207ff0f000142891e1df',
   clientSecret: 'c0479fbff28dac1919a29a15f9a4a368b61e2ffc',
@@ -54,4 +140,4 @@ if __name__ == &#39;__main__&#39;:
   language: 'zh-CN',
   pagerDirection: 'last'
 })
-gitalk.render('container')</script></div></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#threading"><span class="toc-text">threading</span></a></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/10/13/xian-dai-cao-zuo-xi-tong/">进程 线程</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/29/kmp-suan-fa/">kmp算法</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/11/kuai-su-pai-xu/">快速排序</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/02/wo-yin-xiang-zhong-de-http-xie-yi/">我印象中的http协议</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/29/shen-ru-li-jie-ji-suan-ji-xi-tong/">数据表示</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/29/ma-la-che-suan-fa/">马拉车算法</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/20/pdf-qu-shui-yin/">记一次pdf去水印的流程</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/06/03/docker-jing-xiang-jia-su-pei-zhi/">docker镜像加速配置</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/05/25/python-duo-xian-cheng/">python多线程</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/05/24/zhi-neng-ji-suan/">手撕bp神经网络</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/ZHANZHl.github.io/tags/docker-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" style="font-size: 15px;">docker,环境配置</a> <a href="/ZHANZHl.github.io/tags/kmp-%E7%AE%97%E6%B3%95/" style="font-size: 15px;">kmp,算法</a> <a href="/ZHANZHl.github.io/tags/pdf-%E5%B0%8F%E5%B7%A5%E5%85%B7/" style="font-size: 15px;">pdf,小工具</a> <a href="/ZHANZHl.github.io/tags/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F-%E7%AE%97%E6%B3%95/" style="font-size: 15px;">快速排序,算法</a> <a href="/ZHANZHl.github.io/tags/%E9%9D%A2%E8%AF%95-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-http-%E6%8A%93%E5%8C%85/" style="font-size: 15px;">面试,计算机网络,http,抓包</a> <a href="/ZHANZHl.github.io/tags/python-%E5%A4%9A%E7%BA%BF%E7%A8%8B/" style="font-size: 15px;">python,多线程</a> <a href="/ZHANZHl.github.io/tags/html/" style="font-size: 15px;">html</a> <a href="/ZHANZHl.github.io/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/" style="font-size: 15px;">人工智能</a> <a href="/ZHANZHl.github.io/tags/%E6%95%B0%E6%8D%AE%E8%A1%A8%E7%A4%BA/" style="font-size: 15px;">数据表示</a> <a href="/ZHANZHl.github.io/tags/%E8%BF%9B%E7%A8%8B-%E7%BA%BF%E7%A8%8B/" style="font-size: 15px;">进程 线程</a> <a href="/ZHANZHl.github.io/tags/%E7%AE%97%E6%B3%95-%E5%9B%9E%E6%96%87%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 15px;">算法,回文字符串</a> <a href="/ZHANZHl.github.io/tags/python-%E7%88%AC%E8%99%AB/" style="font-size: 15px;">python,爬虫</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/ZHANZHl.github.io/archives/2020/">2020</a><span class="archive-list-count">12</span></li></ul></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/ZHANZHl.github.io/baidusitemap.xml">网站地图</a> |  <a href="/ZHANZHl.github.io/atom.xml">订阅本站</a> |  <a href="/ZHANZHl.github.io/about/">联系博主</a></p><p>本站总访问量：<i id="busuanzi_container_site_pv"><i id="busuanzi_value_site_pv"></i></i>次，本站总访客数:<i id="busuanzi_container_site_uv"><i id="busuanzi_value_site_uv"></i></i>人</p><p><span> Copyright &copy;<a href="/ZHANZHl.github.io/." rel="nofollow">zhanzhi.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Count by<a href="http://busuanzi.ibruce.info/" target="_blank" rel="noopener"> busuanzi.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><script type="text/javascript" src="/ZHANZHl.github.io/js/search.json.js?v=2.0.4"></script><script type="text/javascript" src="/ZHANZHl.github.io/js/toctotop.js?v=2.0.4" async></script><link rel="stylesheet" type="text/css" href="/ZHANZHl.github.io/share/css/share.css"><script type="text/javascript" src="/ZHANZHl.github.io/share/js/social-share.js" charset="utf-8"></script><script type="text/javascript" src="/ZHANZHl.github.io/share/js/qrcode.js" charset="utf-8"></script></body></html>
+gitalk.render('container')</script></div></div></div></div></div><div class="layout-r"><div id="sidebar"><div class="search-pla"></div><div id="toc" class="widget"><div class="widget-title"><i class="fa fa-fei">文章目录</i></div><ol class="toc"><li class="toc-item toc-level-3"><a class="toc-link" href="#从信号量开始"><span class="toc-text">从信号量开始</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#acquire"><span class="toc-text">acquire</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#release"><span class="toc-text">release</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Condition"><span class="toc-text">Condition</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#condition的上下文管理器完全是lock的"><span class="toc-text">condition的上下文管理器完全是lock的</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#is-owned"><span class="toc-text">_is_owned</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#wait"><span class="toc-text">wait</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#notify"><span class="toc-text">notify</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Lock"><span class="toc-text">Lock</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#init"><span class="toc-text">init</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#acquire-1"><span class="toc-text">acquire</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#release-1"><span class="toc-text">release</span></a></li></ol></li></ol></div><div class="widget"><div class="widget-title"><i class="fa fa-xie"> 最新文章</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/12/11/torch-you-ji/">torch游记</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/11/21/cong-xin-hao-liang-dao-chou-xiang-dui-lie-tong-bu-qi/">从信号量到抽象队列同步器</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/10/13/xian-dai-cao-zuo-xi-tong/">进程 线程</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/29/kmp-suan-fa/">kmp算法</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/11/kuai-su-pai-xu/">快速排序</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/09/02/wo-yin-xiang-zhong-de-http-xie-yi/">我印象中的http协议</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/29/shen-ru-li-jie-ji-suan-ji-xi-tong/">数据表示</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/29/ma-la-che-suan-fa/">马拉车算法</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/08/20/pdf-qu-shui-yin/">记一次pdf去水印的流程</a></li><li class="post-list-item"><a class="post-list-link" href="/ZHANZHl.github.io/2020/06/03/docker-jing-xiang-jia-su-pei-zhi/">docker镜像加速配置</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-biao"> 标签</i></div><div class="tagcloud"><a href="/ZHANZHl.github.io/tags/docker-%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/" style="font-size: 15px;">docker,环境配置</a> <a href="/ZHANZHl.github.io/tags/kmp-%E7%AE%97%E6%B3%95/" style="font-size: 15px;">kmp,算法</a> <a href="/ZHANZHl.github.io/tags/pdf-%E5%B0%8F%E5%B7%A5%E5%85%B7/" style="font-size: 15px;">pdf,小工具</a> <a href="/ZHANZHl.github.io/tags/%E5%BF%AB%E9%80%9F%E6%8E%92%E5%BA%8F-%E7%AE%97%E6%B3%95/" style="font-size: 15px;">快速排序,算法</a> <a href="/ZHANZHl.github.io/tags/%E9%9D%A2%E8%AF%95-%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C-http-%E6%8A%93%E5%8C%85/" style="font-size: 15px;">面试,计算机网络,http,抓包</a> <a href="/ZHANZHl.github.io/tags/python-%E5%A4%9A%E7%BA%BF%E7%A8%8B/" style="font-size: 15px;">python,多线程</a> <a href="/ZHANZHl.github.io/tags/html/" style="font-size: 15px;">html</a> <a href="/ZHANZHl.github.io/tags/%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/" style="font-size: 15px;">人工智能</a> <a href="/ZHANZHl.github.io/tags/%E6%95%B0%E6%8D%AE%E8%A1%A8%E7%A4%BA/" style="font-size: 15px;">数据表示</a> <a href="/ZHANZHl.github.io/tags/%E8%BF%9B%E7%A8%8B-%E7%BA%BF%E7%A8%8B/" style="font-size: 15px;">进程 线程</a> <a href="/ZHANZHl.github.io/tags/%E7%AE%97%E6%B3%95-%E5%9B%9E%E6%96%87%E5%AD%97%E7%AC%A6%E4%B8%B2/" style="font-size: 15px;">算法,回文字符串</a> <a href="/ZHANZHl.github.io/tags/python-%E7%88%AC%E8%99%AB/" style="font-size: 15px;">python,爬虫</a> <a href="/ZHANZHl.github.io/tags/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" style="font-size: 15px;">并发编程</a> <a href="/ZHANZHl.github.io/tags/torch-%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD/" style="font-size: 15px;">torch , 人工智能</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-archive"> 归档</i></div><ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/ZHANZHl.github.io/archives/2020/">2020</a><span class="archive-list-count">14</span></li></ul></div></div></div></div><a id="totop" href="#top"></a><div id="footer"><div class="footer-info"><p><a href="/ZHANZHl.github.io/baidusitemap.xml">网站地图</a> |  <a href="/ZHANZHl.github.io/atom.xml">订阅本站</a> |  <a href="/ZHANZHl.github.io/about/">联系博主</a></p><p>本站总访问量：<i id="busuanzi_container_site_pv"><i id="busuanzi_value_site_pv"></i></i>次，本站总访客数:<i id="busuanzi_container_site_uv"><i id="busuanzi_value_site_uv"></i></i>人</p><p><span> Copyright &copy;<a href="/ZHANZHl.github.io/." rel="nofollow">zhanzhi.</a></span><span> Theme by<a rel="nofollow" target="_blank" href="https://github.com/chaooo/hexo-theme-BlueLake"> BlueLake.</a></span><span> Count by<a href="http://busuanzi.ibruce.info/" target="_blank" rel="noopener"> busuanzi.</a></span><span> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a></span></p></div></div></div><script src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" async></script><script type="text/javascript" src="/ZHANZHl.github.io/js/search.json.js?v=2.0.4"></script><script type="text/javascript" src="/ZHANZHl.github.io/js/toctotop.js?v=2.0.4" async></script><link rel="stylesheet" type="text/css" href="/ZHANZHl.github.io/share/css/share.css"><script type="text/javascript" src="/ZHANZHl.github.io/share/js/social-share.js" charset="utf-8"></script><script type="text/javascript" src="/ZHANZHl.github.io/share/js/qrcode.js" charset="utf-8"></script></body></html>
